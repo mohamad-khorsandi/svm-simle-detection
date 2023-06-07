@@ -27,4 +27,4 @@ def load_and_test():
 
 
 if __name__ == '__main__':
-    load_and_test()
+    live_stream()
