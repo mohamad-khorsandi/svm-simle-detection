@@ -1,18 +1,18 @@
 # webcam-simle-detection-svm
-detecte simle live on web cam using svm model trained on GENKI4
+detect simple live on webcam using SVM model trained on GENKI4
 
 
-- the model has trained on [GENKI4 dataset](https://inc.ucsd.edu/mplab/398/) witch is 4000 pictures 
+- the model has trained on [GENKI4 dataset](https://inc.ucsd.edu/mplab/398/) which is 4000 pictures 
 with two classes(smile and not smile)
-- svm model train
-  - used opencv to and Scikit-image to detect faces and extract LBP and HOG features
-  - used Scikit-learn to fit svm model on data
-- knn models train
+- SVM model train
+  - used opencv and Scikit-image to detect faces and extract LBP and HOG features
+  - used Scikit-learn to fit a SVM model on data
+- CNN models train
 
-  - used MobileNetV2 with pretrained weights without classifier layers
-  - classifier layer added to model
+  - used MobileNetV2 with pre-trained weights without classifier layers
+  - classifier layer added to the model
   - all weights trained for this problem
-- svm trained model is saved and uploaded in repository in order to use in live smile detection 
+- SVM trained model is saved and uploaded to the repository in order to use in live smile detection 
 
 ### Installation
 1. Create a virtual environment for the project:
