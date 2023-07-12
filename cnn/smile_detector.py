@@ -1,3 +1,4 @@
+import os.path
 import pickle
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -11,6 +12,7 @@ from keras.applications import MobileNet, ResNet50
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten
 
+model_path = 'models/mobilenet_v2_weights_tf_dim_ordering_tf_kernels_1.0_224_no_top.h5'
 
 class SmileDetector:
     def __init__(self, x, y, model_file):
@@ -21,23 +23,32 @@ class SmileDetector:
         self.y_test = np.array(self.y_test)
         self.x_train = np.array(self.x_train)
 
-        self.input_shape = (*self.x_train[0].shape, 1)
+        self.input_shape = x[0].shape
         print(self.input_shape)
-        self.model_file = model_file
+        self.model_file = f'{model_file}.h5'
         self._model = None
 
     def train(self, epoch):
-        self._model = tf.keras.models.Sequential([
-            tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=self.input_shape),
-            tf.keras.layers.MaxPooling2D((2, 2)),
-            tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
-            tf.keras.layers.MaxPooling2D((2, 2)),
-            tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
-            tf.keras.layers.MaxPooling2D((2, 2)),
-            tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(256, activation='relu'),
+        base_model = tf.keras.applications.MobileNetV2(input_shape=self.input_shape,
+                                                       include_top=False,
+                                                       weights=None)
+        base_model.load_weights(model_path)
+
+        preprocess_input = tf.keras.applications.mobilenet_v2.preprocess_input
+        global_average_layer = tf.keras.layers.GlobalAveragePooling2D()
+        prediction_layer = tf.keras.Sequential([
+            # tf.keras.layers.Dense(128, activation='relu'),
             tf.keras.layers.Dense(1, activation='sigmoid')
         ])
+        base_model.trainable = True
+
+        inputs = tf.keras.Input(shape=self.input_shape)
+        x = preprocess_input(inputs)
+        x = base_model(x, training=True)
+        x = global_average_layer(x)
+        # x = tf.keras.layers.Dropout(0.2)(x)
+        outputs = prediction_layer(x)
+        self._model = tf.keras.Model(inputs, outputs)
 
         self._model.compile(optimizer='adam',
                             loss='binary_crossentropy',
@@ -48,30 +59,17 @@ class SmileDetector:
         self.train_accuracy()
         self.save_model()
 
-    def train_complex(self, epoch):
-        base_model = ResNet50(weights=None, include_top=False, input_shape=self.input_shape)
-        self._model = Sequential()
-
-        self._model.add(base_model)
-
-        self._model.add(Flatten())
-        self._model.add(Dense(256, activation='relu'))
-        self._model.add(Dense(1, activation='sigmoid'))
-
-        self._model.compile(loss='binary_crossentropy',
-                     optimizer='adam',
-                     metrics=['accuracy'])
-
-        self._model.summary()
+    def fit_more(self, epoch):
+        self.load_model()
         self._model.fit(self.x_train, self.y_train, epochs=epoch)
-        self.train_accuracy()
-        self.save_model()
 
     def save_model(self):
-        pickle.dump(self._model, open(self.model_file, 'wb'))
+        print(self.model_file)
+        self._model.save(self.model_file)
 
     def load_model(self):
-        self._model = pickle.load(open(self.model_file, "rb"))
+        print(self.model_file)
+        self._model = tf.keras.models.load_model(self.model_file)
 
     def train_accuracy(self):
         accuracy = self._model.evaluate(self.x_train, self.y_train)[1]
@@ -102,3 +100,6 @@ class SmileDetector:
             else:
                 pred.append(0)
         return pred
+
+    def single_predict(self, face):
+        return self._model.predict(face)

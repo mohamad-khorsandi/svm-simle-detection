@@ -2,3 +2,6 @@
 /dataset/
 /extracted_data/
 /.idea
+*/__pycache__/*
+faces
+/models/cnn_model_cur.h5
